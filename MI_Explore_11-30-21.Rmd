@@ -119,59 +119,17 @@ arrest = arrest %>%
 
 ```
 
-
-
-
 ```{r}
 
-phase1_treated = treatments %>%
-  filter(phase == "one") %>%
-  select(fips_county_code, number_of_tests)
-
-phase1_ids = phase1_treated$fips_county_code
-
-
-phase2_treated = treatments %>%
-  filter(phase == "two") %>%
-  select(fips_county_code, number_of_tests)
-
-phase2_ids = phase2_treated$fips_county_code
-
-treated_ids = unique(treatments$fips_county_code)
-
-
-phase1_start = my("november 2017")
-phase1_end = my("october 2018")
-phase2_start = my("october 2019")
-phase2_end = my("september 2020")
-
-
-phase1_interval = interval(start = phase1_start, end = phase1_end)
-phase2_interval = interval(start = phase2_start, end = phase2_end)
-
-
-test = arrest %>%
-  left_join(phase1_treated) %>% 
-  mutate(number_of_tests = replace_na(number_of_tests, 0)) %>%
-  rename(phase1_swabs = number_of_tests) %>%
-  mutate(phase1_swabs = ifelse(d %within% phase1_interval, phase1_swabs, 0)) %>%
-  left_join(phase2_treated) %>% 
-  mutate(number_of_tests = replace_na(number_of_tests, 0)) %>%
-  rename(phase2_swabs = number_of_tests) %>%
-  mutate(phase2_swabs = ifelse(d %within% phase2_interval, phase2_swabs, 0))
-
-
-```
-
-
-```{r}
-
-#### Scratch work
-treatments = treatments %>%
-  mutate(startdate = ifelse(phase == "one", "november 2017", "october 2019")) %>%
-  mutate(enddate = ifelse(phase == "one", "november 2018", "september 2020")) %>%
-  mutate(s = my(startdate)) %>%
-  mutate(e = my(enddate))
+check = arrest %>%
+  group_by(fips_county_code, phase1_swabs) %>%
+  mutate(phase1_dui = sum(dui_tot_arrests)) %>%
+  mutate(phase1_dui_white = sum(dui_tot_white)) %>%
+  ungroup() %>%
+  group_by(fips_county_code, phase2_swabs) %>%
+  mutate(phase2_dui = sum(dui_tot_arrests)) %>%
+  mutate(phase2_dui_white = sum(dui_tot_white)) %>%
+  ungroup()
 
 
 
