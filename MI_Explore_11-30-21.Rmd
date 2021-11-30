@@ -1,16 +1,17 @@
 ---
 title: "Michigan Explore"
 author: "Blain Morin"
-date: "11/24/2021"
+date: "11/30/2021"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, cache = TRUE)
 library(tidyverse)
 library(lubridate)
 library(readr)
+library(plotly)
 
 ```
 
@@ -119,6 +120,11 @@ arrest = arrest %>%
 
 ```
 
+
+
+
+
+
 ```{r}
 
 check = arrest %>%
@@ -129,14 +135,71 @@ check = arrest %>%
   group_by(fips_county_code, phase2_swabs) %>%
   mutate(phase2_dui = sum(dui_tot_arrests)) %>%
   mutate(phase2_dui_white = sum(dui_tot_white)) %>%
+  ungroup() 
+
+check = check %>%
+  mutate(phase1 = ifelse(phase1_swabs == 0 ,0, 1)) %>%
+  mutate(phase2 = ifelse(phase2_swabs == 0, 0, 1)) %>%
+  group_by(fips_county_code) %>%
+  mutate(sum1 = sum(phase1, na.rm = TRUE)) %>%
+  mutate(sum2 = sum(phase2, na.rm = TRUE)) %>%
+  mutate(phase12 = ifelse(sum1 != 0 & sum2 !=0, 1, 0)) %>%
+  mutate(control = ifelse(sum2 == 0, 1, 0)) %>%
   ungroup()
 
+check2 = check %>%
+  mutate(Group = ifelse(control == 1, "Control", 0)) %>%
+  mutate(Group = ifelse(sum2 != 0, "Phase 2 Only", Group)) %>%
+  mutate(Group = ifelse(sum1 != 0, "Phase 1 and 2", Group))
 
 
 ```
 
+# Average Number Of DUI Arrests, By Treatment Group
+
+```{r}
+
+check3 = check2 %>%
+  group_by(Group, d) %>%
+  summarise(average_dui_arrests = mean(dui_tot_arrests))
+
+a = check3 %>%
+  ggplot(aes(x = d, y = average_dui_arrests)) +
+  geom_line(aes(color = Group)) +
+  geom_smooth(aes(color = Group), se = FALSE) +
+  theme_bw() +
+  ylab("Average Number of DUI Arrests") +
+  xlab("Date") 
+
+ggplotly(a)
+
+```
+
+Interesting dip in 2020. Pandemic maybe?
 
 
+# Average Number Of DUI Arrests, By Treatment Group, By Month
+
+```{r, fig.width=11}
+
+check3 = check2 %>%
+  group_by(Group, d) %>%
+  summarise(average_dui_arrests = mean(dui_tot_arrests)) %>%
+  mutate(Month = format(d, "%m"))
+
+b = check3 %>%
+  ggplot(aes(x = d, y = average_dui_arrests)) +
+  geom_line(aes(color = Group))  +
+  theme_bw() +
+  ylab("Average Number of DUI Arrests") +
+  xlab("Date") +
+  facet_wrap(~Month) +
+  theme(strip.background =element_rect(fill="black")) +
+  theme(strip.text = element_text(colour = 'white'))
+
+ggplotly(b)
+
+```
 
 
 
