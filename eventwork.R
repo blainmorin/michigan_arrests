@@ -125,10 +125,37 @@ check4 = check4 %>%
   mutate(DUI_p.Black = ifelse(is.nan(DUI_p.Black), 0, DUI_p.Black))
 
 check4 = check4 %>%
-  group_by(fips_county_code) %>%
-  mutate(treat1 = sum(phase1_swabs)) %>%
-  mutate(treat1 = ifelse(treat1 == 0, 0, 1)) %>%
-  
+  mutate(treat1 = ifelse(fips_county_code %in% phase1_ids, 1, 0)) %>%
+  mutate(treat2 = ifelse(fips_county_code %in% phase2_ids, 1, 0)) %>%
+  mutate(treat1_date = my("november 2017")) %>%
+  mutate(treat2_date = my("october 2019"))
+
+check5 = check4 %>%
+  mutate(time_to_t1 = interval(treat1_date, d) %/% months(1)) %>%
+  mutate(time_to_t2 = interval(treat2_date, d) %/% months(1)) %>%
+  mutate(tm5 = ifelse(treat1 == 1 & time_to_t1 == -5, 1, 0)) %>%
+  mutate(tm4 = ifelse(treat1 == 1 & time_to_t1 == -4, 1, 0)) %>%
+  mutate(tm3 = ifelse(treat1 == 1 & time_to_t1 == -3, 1, 0)) %>%
+  mutate(tm2 = ifelse(treat1 == 1 & time_to_t1 == -2, 1, 0)) %>%
+  mutate(tm1 = ifelse(treat1 == 1 & time_to_t1 == -1, 1, 0)) %>%
+  mutate(tp1 = ifelse(treat1 == 1 & time_to_t1 == 1, 1, 0)) %>%
+  mutate(tp2 = ifelse(treat1 == 1 & time_to_t1 == 2, 1, 0)) %>%
+  mutate(tp3 = ifelse(treat1 == 1 & time_to_t1 == 3, 1, 0)) %>%
+  mutate(tp4 = ifelse(treat1 == 1 & time_to_t1 == 4, 1, 0)) %>%
+  mutate(tp5 = ifelse(treat1 == 1 & time_to_t1 == 5, 1, 0)) %>%
+  mutate(tm5 = ifelse(treat2 == 1 & time_to_t2 == -5, 1, tm5)) %>%
+  mutate(tm4 = ifelse(treat2 == 1 & time_to_t2 == -4, 1, tm4)) %>%
+  mutate(tm3 = ifelse(treat2 == 1 & time_to_t2 == -3, 1, tm3)) %>%
+  mutate(tm2 = ifelse(treat2 == 1 & time_to_t2 == -2, 1, tm2)) %>%
+  mutate(tm1 = ifelse(treat2 == 1 & time_to_t2 == -1, 1, tm1)) %>% 
+  mutate(tp1 = ifelse(treat2 == 1 $ time_to_t2 == 1, 1, tp1)) %>%
+  mutate(tp2 = ifelse(treat2 == 1 $ time_to_t2 == 2, 1, tp2)) %>%
+  mutate(tp3 = ifelse(treat2 == 1 $ time_to_t2 == 3, 1, tp3)) %>%
+  mutate(tp4 = ifelse(treat2 == 1 $ time_to_t2 == 4, 1, tp4)) %>%
+  mutate(tp5 = ifelse(treat2 == 1 $ time_to_t2 == 5, 1, tp5)) 
+
+
+           
 
 
 
