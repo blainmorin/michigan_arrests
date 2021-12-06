@@ -1,4 +1,13 @@
+---
+title: "Event Study Graphics"
+author: "Blain Morin"
+date: "12/6/2021"
+output: pdf_document
+---
 
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, cache = TRUE)
 
 library(tidyverse)
 library(lubridate)
@@ -6,6 +15,8 @@ library(readr)
 library(plotly)
 library(ggridges)
 library(stargazer)
+library(data.table) 
+library(fixest) 
 
 
 ### Treatment Data
@@ -148,11 +159,11 @@ check5 = check4 %>%
   mutate(tm3 = ifelse(treat2 == 1 & time_to_t2 == -3, 1, tm3)) %>%
   mutate(tm2 = ifelse(treat2 == 1 & time_to_t2 == -2, 1, tm2)) %>%
   mutate(tm1 = ifelse(treat2 == 1 & time_to_t2 == -1, 1, tm1)) %>% 
-  mutate(tp1 = ifelse(treat2 == 1 $ time_to_t2 == 1, 1, tp1)) %>%
-  mutate(tp2 = ifelse(treat2 == 1 $ time_to_t2 == 2, 1, tp2)) %>%
-  mutate(tp3 = ifelse(treat2 == 1 $ time_to_t2 == 3, 1, tp3)) %>%
-  mutate(tp4 = ifelse(treat2 == 1 $ time_to_t2 == 4, 1, tp4)) %>%
-  mutate(tp5 = ifelse(treat2 == 1 $ time_to_t2 == 5, 1, tp5)) 
+  mutate(tp1 = ifelse(treat2 == 1 & time_to_t2 == 1, 1, tp1)) %>%
+  mutate(tp2 = ifelse(treat2 == 1 & time_to_t2 == 2, 1, tp2)) %>%
+  mutate(tp3 = ifelse(treat2 == 1 & time_to_t2 == 3, 1, tp3)) %>%
+  mutate(tp4 = ifelse(treat2 == 1 & time_to_t2 == 4, 1, tp4)) %>%
+  mutate(tp5 = ifelse(treat2 == 1 & time_to_t2 == 5, 1, tp5)) 
 
 check6 = check4 %>%
   mutate(time_to_t1 = interval(treat1_date, d) %/% months(1)) %>%
@@ -187,25 +198,46 @@ check7 = check6 %>%
   filter(!is.na(fips_county_code))
 
 
-check_model = feols(DUI_Total ~ i(time_to_treat, treat, ref = 0) |
-                      fips_county_code + fd,
-                    cluster = ~fips_county_code + fd, 
+
+```
+
+# Outcome: Number of Arrests$_{county, month}$
+
+```{r, echo = TRUE}
+
+dui.model = feols(DUI_Total ~ i(time_to_treat, treat, ref = 0) | ## Model
+                      fips_county_code + fd, ## Fixed Effects
+                    cluster = ~fips_county_code + fd, ## Se Clustering
                     data = check7)
 
-iplot(check_model,
+```
+
+
+```{r}
+iplot(dui.model,
       xlab = "Time to Treatment",
       main = "Event Study: Total DUI Arrests")
 
 
-check_model = feols(DUI_p.Black ~ i(time_to_treat, treat, ref = 0) |
-                      fips_county_code + fd,
-                    cluster = ~fips_county_code + fd, 
+```
+
+# Outcome: Proportion Black DUI Arrests$_{county, month}$
+
+```{r, echo = TRUE}
+
+
+p.black.model = feols(DUI_p.Black ~ i(time_to_treat, treat, ref = 0) | ## Model
+                      fips_county_code + fd, ## Fixed Effects
+                    cluster = ~fips_county_code + fd, ## Se clustering
                     data = check7)
 
-a = iplot(check_model,
+```
+
+
+```{r}
+
+iplot(p.black.model,
       xlab = "Time to Treatment",
       main = "Event Study: Proportion Black DUI Arrests")
 
-
-
-
+```
