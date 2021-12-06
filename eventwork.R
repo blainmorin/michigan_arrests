@@ -154,30 +154,58 @@ check5 = check4 %>%
   mutate(tp4 = ifelse(treat2 == 1 $ time_to_t2 == 4, 1, tp4)) %>%
   mutate(tp5 = ifelse(treat2 == 1 $ time_to_t2 == 5, 1, tp5)) 
 
+check6 = check4 %>%
+  mutate(time_to_t1 = interval(treat1_date, d) %/% months(1)) %>%
+  mutate(time_to_t2 = interval(treat2_date, d) %/% months(1)) %>%
+  mutate(time_to_treat = ifelse(treat1 == 1 & time_to_t1 == -5, -5, 0)) %>%
+  mutate(time_to_treat = ifelse(treat1 == 1 & time_to_t1 == -4, -4, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat1 == 1 & time_to_t1 == -3, -3, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat1 == 1 & time_to_t1 == -2, -2, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat1 == 1 & time_to_t1 == -1, -1, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat1 == 1 & time_to_t1 == 1, 1, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat1 == 1 & time_to_t1 == 2, 2, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat1 == 1 & time_to_t1 == 3, 3, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat1 == 1 & time_to_t1 == 4, 4, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat1 == 1 & time_to_t1 == 5, 5, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat2 == 1 & time_to_t2 == -5, -5, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat2 == 1 & time_to_t2 == -4, -4, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat2 == 1 & time_to_t2 == -3, -3, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat2 == 1 & time_to_t2 == -2, -2, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat2 == 1 & time_to_t2 == -1, -1, time_to_treat)) %>% 
+  mutate(time_to_treat = ifelse(treat2 == 1 & time_to_t2 == 1, 1, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat2 == 1 & time_to_t2 == 2, 2, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat2 == 1 & time_to_t2 == 3, 3, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat2 == 1 & time_to_t2 == 4, 4, time_to_treat)) %>%
+  mutate(time_to_treat = ifelse(treat2 == 1 & time_to_t2 == 5, 5, time_to_treat)) 
 
-           
+daterange1 = interval(my("june 2017"), my("april 2018"))
+daterange2 = interval(my("may 2019"), my("march 2020"))
+
+check7 = check6 %>%
+  filter(d %within% daterange1 | d %within%daterange2) %>%
+  mutate(treat = ifelse(treat1 == 1 | treat2 == 1, 1, 0))
+
+
+check_model = feols(DUI_Total ~ i(time_to_treat, treat, ref = 0) |
+                      fips_county_code + fd,
+                    cluster = ~fips_county_code, 
+                    data = check7)
+
+iplot(check_model,
+      xlab = "Time to Treatment",
+      main = "Event Study: Staggered Swab Phases")
+
+
+check_model = feols(DUI_p.Black ~ i(time_to_treat, treat, ref = 0) |
+                      fips_county_code + fd,
+                    cluster = ~fips_county_code, 
+                    data = check7)
+
+iplot(check_model,
+      xlab = "Time to Treatment",
+      main = "Event Study: Staggered Swab Phases")
 
 
 
-
-
-
-library(data.table) ## For some minor data wrangling
-library(fixest)     ## NB: Requires version >=0.9.0
-
-# Load and prepare data
-dat = fread("https://raw.githubusercontent.com/LOST-STATS/LOST-STATS.github.io/master/Model_Estimation/Data/Event_Study_DiD/bacon_example.csv") 
-
-# Let's create a more user-friendly indicator of which states received treatment
-dat[, treat := ifelse(is.na(`_nfd`), 0, 1)]
-
-# Create a "time_to_treatment" variable for each state, so that treatment is
-# relative for all treated units. For the never-treated (i.e. control) units,
-# we'll arbitrarily set the "time_to_treatment" value at 0. This value 
-# doesn't really matter, since it will be canceled by the treat==0 interaction
-# anyway. But we do want to make sure they aren't NA, otherwise feols would drop 
-# these never-treated observations at estimation time and our results will be 
-# off.
-dat[, time_to_treat := ifelse(treat==1, year - `_nfd`, 0)]
 
 
